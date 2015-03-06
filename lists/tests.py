@@ -34,26 +34,49 @@ class HomePageTest(TestCase):
         response = home_page(request)
 
         # Assert
-        self.assertIn('A new list item', response.content.decode())
-        expected_html = render_to_string(
-            'home.html',
-            {'new_item_text': 'A new list item'}
-        )
-        self.assertEqual(response.content.decode(), expected_html)
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, 'A new list item')
 
         # SELF SUMMARY (before expected_html part)
-        # not sure about the request = HttpRequest() but it's set up
-        # method attribute set to 'POST' -- i believe the HttpRequest()
-        #   function call likely has, literally, the HTTP request info
-        # and the dictionary contains the 'item_text' key requested by the client,
+        # request is set to an object with the HttpRequest info (don't know details)
+        # this instance has a .method attribute, which we set to 'POST'
+        # and the POST querydict contains the 'item_text' key requested by the client,
         #   which is then set to 'A new list item'
         # the response is sent to a view called with our request info
         # then we see if our expected item_text description is found in
         #   the response.content (decoded for Python3)
+        # note: after re-direct, the assertion changes drastically at
+        #   this point... so pay the code no attention
+
+    def test_home_page_redirects_after_POST(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = 'A new list item'
+
+        response = home_page(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['location'], '/')
+
+    def test_home_page_only_saves_items_when_necessary(self):
+        request = HttpRequest()
+        home_page(request)
+        self.assertEqual(Item.objects.count(), 0)
+
+    def test_home_page_displays_all_list_items(self):
+        Item.objects.create(text='itemey 1')
+        Item.objects.create(text='itemey 2')
+
+        request = HttpRequest()
+        response = home_page(request)
+
+        self.assertIn('itemey 1', response.content.decode())
+        self.assertIn('itemey 2', response.content.decode())
 
 class ItemModelTest(TestCase):
 
-    def test_saving_and_retrieving_ites(self):
+    def test_saving_and_retrieving_items(self):
         first_item = Item()
         first_item.text = 'The first (ever) list item'
         first_item.save()
