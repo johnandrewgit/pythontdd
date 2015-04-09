@@ -22,47 +22,12 @@ class HomePageTest(TestCase):
 
         self.assertEqual(response.content.decode(), expected_html)
 
-    def test_home_page_can_save_a_POST_request(self):
-        # note groupings
-
-        # Setup (the test)
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = 'A new list item'
-
-        # Exercise (function call)
-        response = home_page(request)
-
-        # Assert
-        self.assertEqual(Item.objects.count(), 1)
-        new_item = Item.objects.first()
-        self.assertEqual(new_item.text, 'A new list item')
-
-        # SELF SUMMARY (before expected_html part)
-        # request is set to an object with the HttpRequest info (don't know details)
-        # this instance has a .method attribute, which we set to 'POST'
-        # and the POST querydict contains the 'item_text' key requested by the client,
-        #   which is then set to 'A new list item'
-        # the response is sent to a view called with our request info
-        # then we see if our expected item_text description is found in
-        #   the response.content (decoded for Python3)
-        # note: after re-direct, the assertion changes drastically at
-        #   this point... so pay the code no attention
-
-    def test_home_page_redirects_after_POST(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = 'A new list item'
-
-        response = home_page(request)
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/lists/the-only-list-in-the-world/')
-
-    def test_home_page_only_saves_items_when_necessary(self):
-        request = HttpRequest()
-        home_page(request)
-        self.assertEqual(Item.objects.count(), 0)
+    ## CAN DELETE beause we took out the POST in our home_page view,
+    #    and let the new_list view handle adding new items
+    # def test_home_page_only_saves_items_when_necessary(self):
+    #     request = HttpRequest()
+    #     home_page(request)
+    #     self.assertEqual(Item.objects.count(), 0)
 
     ## CAN DELETE, as it's not neeed, leaving here for reference
     ##  as of chapter 06:
@@ -111,3 +76,25 @@ class ListViewTest(TestCase):
 
         self.assertContains(response, 'itemey 1')
         self.assertContains(response, 'itemey 2')
+
+class NewListTest(TestCase):
+
+    def test_saving_a_POST_request(self):
+        self.client.post(
+            '/lists/new',
+            data={'item_text': 'A new list item'}
+        )
+
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, 'A new list item')
+
+    def test_redirects_after_POST(self):
+        response = self.client.post (
+            '/lists/new',
+            data={'item_text': 'A new list item'}
+        )
+
+        #self.assertEqual(response.status_code, 302)
+        #self.assertEqual(response['location'], '/lists/the-only-list-in-the-world/')
+        self.assertRedirects(response, '/lists/the-only-list-in-the-world/')
