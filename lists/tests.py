@@ -6,9 +6,6 @@ from django.http import HttpRequest
 from lists.views import home_page
 from lists.models import Item, List
 
-# Personal note: our tests inherit from TestCase, a specialized
-# unit testing tool courtesy of Django
-
 class HomePageTest(TestCase):
 
     def test_root_url_resolves_to_home_page_view(self):
@@ -21,25 +18,6 @@ class HomePageTest(TestCase):
         expected_html = render_to_string('home.html')
 
         self.assertEqual(response.content.decode(), expected_html)
-
-    ## CAN DELETE beause we took out the POST in our home_page view,
-    #    and let the new_list view handle adding new items
-    # def test_home_page_only_saves_items_when_necessary(self):
-    #     request = HttpRequest()
-    #     home_page(request)
-    #     self.assertEqual(Item.objects.count(), 0)
-
-    ## CAN DELETE, as it's not neeed, leaving here for reference
-    ##  as of chapter 06:
-    # def test_home_page_displays_all_list_items(self):
-    #     Item.objects.create(text='itemey 1')
-    #     Item.objects.create(text='itemey 2')
-
-    #     request = HttpRequest()
-    #     response = home_page(request)
-
-    #     self.assertIn('itemey 1', response.content.decode())
-    #     self.assertIn('itemey 2', response.content.decode())
 
 class ListAndItemModelsTest(TestCase):
 
@@ -73,26 +51,11 @@ class ListAndItemModelsTest(TestCase):
 class ListViewTest(TestCase):
 
     def test_uses_list_template(self):
-        # response = self.client.get('/lists/the-only-list-in-the-world/')
-        ## note the shift from a specific list to unique lists
         list_ = List.objects.create()
         response = self.client.get('/lists/%d/' %(list_.id,))
 
         self.assertTemplateUsed(response, 'list.html')
 
-    # def test_displays_all_items(self):
-    #     list_ = List.objects.create()
-
-    #     Item.objects.create(text='itemey 1', list=list_)
-    #     Item.objects.create(text='itemey 2', list=list_)
-
-    #     response = self.client.get('/lists/the-only-list-in-the-world/')
-
-    #     self.assertContains(response, 'itemey 1')
-    #     self.assertContains(response, 'itemey 2')
-
-    ## again, note shift from displaying all items to displaying items of a
-    ##   a specific list
     def test_displays_only_items_for_that_list(self):
         correct_list = List.objects.create()
         Item.objects.create(text='itemey 1', list=correct_list)
@@ -132,8 +95,6 @@ class NewListTest(TestCase):
             data={'item_text': 'A new list item'}
         )
 
-        #self.assertEqual(response.status_code, 302)
-        #self.assertEqual(response['location'], '/lists/the-only-list-in-the-world/')
         new_list = List.objects.first()
         self.assertRedirects(response, '/lists/%d/' %(new_list.id,))
 
